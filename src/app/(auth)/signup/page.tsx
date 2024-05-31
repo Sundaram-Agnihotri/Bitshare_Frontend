@@ -1,18 +1,82 @@
 "use client";
 import React, { useState } from "react";
 import styles from "@/styles/auth.module.css";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+
+import Link from "next/link";
+
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+}
 
 const page = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [otp, setOtp] = useState("");
+  const Router = useRouter();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    password: "",
+  } as FormData);
 
-  const sendOtp = () => {};
+  const [otp, setOtp] = React.useState("");
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+  const [sendingOtp, setSendingOtp] = useState<boolean>(false);
+  const sendOtp = async () => {
+    setSendingOtp(true);
+    let res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/auth/sendotp", {
+      method: "POST",
+      body: JSON.stringify({ email: formData.email }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
 
-  const handleSignup = () => {};
+    let data = await res.json();
+    setSendingOtp(false);
+
+    if (data.ok) {
+      toast.success("OTP sent");
+    } else {
+      toast.error(data.message);
+    }
+  };
+
+  const handleSignup = async () => {
+    if (formData.name == "" || formData.email == '' || formData.password == '' || otp == '') {
+      toast.error('Please fill all the fields')
+      return
+    }
+    let formdata = new FormData();
+
+    formdata.append('name', formData.name);
+    formdata.append('email', formData.email);
+    formdata.append('password', formData.password);
+    formdata.append('otp', otp);
+    if (imageFile) {
+      formdata.append('clientfile', imageFile)
+    }
+    let res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/register', {
+      method: 'POST',
+      body: formdata,
+      credentials : 'include'
+    })
+    let data = await res.json()
+    if (data.ok) {
+      toast.success('Signup successful')
+      Router.push('/login')
+    }
+
+    else {
+      toast.error(data.message)
+    }
+  }
 
   return (
     <div className={styles.authpage}>
@@ -24,8 +88,18 @@ const page = () => {
             type="name"
             name="name"
             id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={formData.name}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className={styles.inputcontaner}>
+          <label htmlFor="name">Profile Pic</label>
+          <input
+            type="file"
+            name="image"
+            id="image"
+            onChange={(e) => setImageFile(e.target.files![0])}
           />
         </div>
 
@@ -36,10 +110,21 @@ const page = () => {
               type="email"
               name="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleInputChange}
             />
-            <button onClick={sendOtp}>Send OTP</button>
+            {!sendingOtp ? (
+              <button onClick={sendOtp}>Send OTP</button>
+            ) : (
+              <button
+                style={{
+                  backgroundColor: "gray",
+                  cursor: "not-allowed",
+                }}
+              >
+                Sending OTP
+              </button>
+            )}
           </div>
         </div>
 
@@ -60,8 +145,8 @@ const page = () => {
             type="password"
             name="password"
             id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={handleInputChange}
           />
         </div>
 
