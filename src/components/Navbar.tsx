@@ -16,25 +16,23 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const pathname = usePathname()
 
+ 
   const checkLogin = async () => {
-      let res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/checklogin', {
-          method: 'GET',
-          credentials: 'include'
-      })
+    let res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/checklogin', {
+        method: 'GET',
+        credentials: 'include'
+    })
 
-      let data = await res.json()
-      if (!data.ok) {
-          dispatch(logOut())
-      }
-      else {
-          getUserData()
-      }
+    let data = await res.json()
+    if (!data.ok) {
+        dispatch(logOut())
+    }
+    else {
+        getUserData()
+    }
 
-  }
+}
 
-  React.useEffect(() => {
-      checkLogin()
-  }, [])
 
   const getUserData = async () => {
       let res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/auth/getuser', {
